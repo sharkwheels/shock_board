@@ -29,9 +29,11 @@ int buttonMap[2][2][2] = {
 	{{0,1},{1,1}}
 };
 
+// out and in pins
 int ledPin = 13;
-int roundBtn = 3;
+int resetBtn = 4;
 
+// hold the current spot
 int currentX = 0;
 int currentY = 0;
 
@@ -62,6 +64,7 @@ void setup()
   }
 
   pinMode(ledPin, OUTPUT);
+  pinMode(resetBtn, INPUT_PULLUP);
 
   matrix.begin();
   matrix.setBrightness(60);
@@ -74,6 +77,7 @@ void setup()
 
 void loop() 
 {
+
 	for(int rowPin = 0; rowPin < rPinsNo; rowPin++)
 	{
 		digitalWrite(rPins[rowPin], HIGH);
@@ -99,18 +103,31 @@ void loop()
 				Serial.print(",");
 				Serial.print(currentY);
 				Serial.println();
-
 				// delay
 				delay(200); 
-				
 			}
-			else {
+			else 
+			{
 				digitalWrite(ledPin, LOW);
 			}
   	}
 
   	digitalWrite(rPins[rowPin], LOW);		
 	}
+
+	if(LOW == digitalRead(resetBtn)){
+		resetEverything();
+	}
+
 matrix.show();
 }
+
+
+void resetEverything(){
+	matrix.fillScreen(matrix.Color(255, 255, 255));
+  matrix.drawPixel(0,0,matrix.Color(0, 255, 0)); // one green pixel
+  currentY = 0;
+  currentX = 0;
+}
+
 
