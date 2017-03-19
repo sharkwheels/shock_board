@@ -4,12 +4,12 @@
 #include <Adafruit_NeoMatrix.h>
 
 #define NEOPIN 2
-#define MATRIX_W 4
-#define MATRIX_H 4
+#define MATRIX_W 2
+#define MATRIX_H 2
 
 Adafruit_NeoMatrix matrix = Adafruit_NeoMatrix(MATRIX_W, MATRIX_H, NEOPIN,
-                            NEO_MATRIX_BOTTOM + NEO_MATRIX_LEFT +
-                            NEO_MATRIX_ROWS + NEO_MATRIX_ZIGZAG,
+                            NEO_MATRIX_TOP + NEO_MATRIX_LEFT +
+                            NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG,
                             NEO_GRB + NEO_KHZ800);
 
 // Array of pins for the rows
@@ -20,27 +20,45 @@ int rPinsNo = sizeof(rPins) / sizeof(int);
 int cPins[] = {9,10};
 int cPinsNo = sizeof(cPins) / sizeof(int);
 
-// [rows][cols]
-int prev[2][2] = {0};
-
 // [ROW][COLUMN][CORRDINATE]
 int buttonMap[2][2][2] = {
-	{{0,0},{1,0}},
-	{{0,1},{1,1}}
+	{{0,0},{0,1}},
+	{{1,0},{1,1}}
 };
 
 // out and in pins
 int ledPin = 13;
 int resetBtn = 4;
+bool oldState = HIGH;
 
 // hold the current spot
 int currentX = 0;
 int currentY = 0;
 
+int currentBoard[2][2] = {};
+
+// board tests
+
+	int boardOne[2][2] = {
+		{0,0},
+		{1,1},
+	};
+
+	int boardTwo[2][2] = {
+		{1,0},
+		{0,1}
+	};
+
+	int boardThree[2][2] = {
+		{1,1},
+		{0,1}
+	};
+
+
 
 void setup() 
 {
-  // put your setup code here, to run once:
+	randomSeed(analogRead(A0));
   Serial.begin(9600);
   Serial.println("Multiplexed Buttons Test");
 
@@ -69,15 +87,15 @@ void setup()
   matrix.begin();
   matrix.setBrightness(60);
   matrix.fillScreen(matrix.Color(255, 255, 255));
-  matrix.drawPixel(0,0,matrix.Color(0, 255, 0)); // one green pixel
-
+  
+  chooseBoard(random(1,4));
   Serial.println("Setup Done");
 
 }
 
 void loop() 
 {
-
+	// loop through all the pins
 	for(int rowPin = 0; rowPin < rPinsNo; rowPin++)
 	{
 		digitalWrite(rPins[rowPin], HIGH);
@@ -94,16 +112,17 @@ void loop()
 				currentX = buttonMap[rowPin][colPin][0];
 				currentY = buttonMap[rowPin][colPin][1];
 
-				// draw a red pixel at the given co-ordinate on the neomatrix
-				matrix.drawPixel(currentX,currentY,matrix.Color(255, 0, 0)); // one red pixel
+				matrix.drawPixel(currentX,currentY,matrix.Color(0, 0, 255)); // one red pixel
 
-				// print that shit
-				Serial.print("square: ");
-				Serial.print(currentX);
-				Serial.print(",");
-				Serial.print(currentY);
-				Serial.println();
-				// delay
+				// trying to thin kabout how to compare the current board w/ the button map...
+				// grab the index numnber
+				// get the same index from buttoMap
+				// if the values at that index are == to the values of currentX and currentY
+				// shock the player
+				// ??
+
+
+				
 				delay(200); 
 			}
 			else 
@@ -111,23 +130,81 @@ void loop()
 				digitalWrite(ledPin, LOW);
 			}
   	}
-
   	digitalWrite(rPins[rowPin], LOW);		
 	}
 
-	if(LOW == digitalRead(resetBtn)){
-		resetEverything();
-	}
+	// reset button
+	bool newState = digitalRead(resetBtn);
+  if (newState == LOW && oldState == HIGH) 
+  {
+  	resetEverything();
+  	delay(50);
+  }
+	oldState = newState;
 
-matrix.show();
+	// show the matrix
+	matrix.show();
 }
 
+// print that shit
+				/*Serial.print("square: ");
+				Serial.print(currentX);
+				Serial.print(",");
+				Serial.print(currentY);
+				Serial.println();*/
 
-void resetEverything(){
+void resetEverything()
+{
 	matrix.fillScreen(matrix.Color(255, 255, 255));
-  matrix.drawPixel(0,0,matrix.Color(0, 255, 0)); // one green pixel
+  chooseBoard(random(1,4));
   currentY = 0;
   currentX = 0;
+}
+
+void chooseBoard(int command){
+	if(command == 1)
+	{
+		boardPattern(boardOne);
+	}
+	else if(command == 2)
+	{
+		boardPattern(boardTwo);
+	}
+	else if(command == 3)
+	{
+		boardPattern(boardThree);
+
+	}	
+}
+
+void boardPattern(int pattern[2][2])
+{
+
+	// ohmygod I hate you C++ 
+	// this is me assigning one array to another. 
+	// Is there a better way to do this? 
+
+	for(int i = 0; i < 2; i++){
+		for(int j = 0; j < 2; j++){
+			//Serial.print(pattern[i][j]);
+			currentBoard[i][j] = pattern[i][j];
+			//Serial.print(currentBoard[i][j]);
+		}
+	}
+	// 1 = shock / the sea
+	// 0 = land
+
+	for(int row = 0; row < rPinsNo; row++) 
+	{
+    for(int column = 0; column < cPinsNo; column++) 
+    {
+     if(pattern[row][column] == 1) 
+     {
+       matrix.drawPixel(row,column,matrix.Color(0255, 0, 0)); // one green pixel
+     } 
+   }
+  }
+	
 }
 
 
