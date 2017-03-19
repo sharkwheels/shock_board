@@ -1,5 +1,5 @@
 // Reed Switch Matrix Test courtesy of Jane H.
-
+#include <ArduinoSTL.h>
 #include <Adafruit_NeoPixel.h>
 #include <Adafruit_NeoMatrix.h>
 
@@ -29,6 +29,8 @@ int buttonMap[2][2][2] = {
 // out and in pins
 int ledPin = 13;
 int resetBtn = 4;
+int p1Shock = 52;
+
 bool oldState = HIGH;
 
 // hold the current spot
@@ -53,8 +55,6 @@ int currentBoard[2][2] = {};
 		{1,1},
 		{0,1}
 	};
-
-
 
 void setup() 
 {
@@ -82,7 +82,10 @@ void setup()
   }
 
   pinMode(ledPin, OUTPUT);
+  pinMode(p1Shock, OUTPUT);
   pinMode(resetBtn, INPUT_PULLUP);
+
+
 
   matrix.begin();
   matrix.setBrightness(60);
@@ -99,30 +102,29 @@ void loop()
 	for(int rowPin = 0; rowPin < rPinsNo; rowPin++)
 	{
 		digitalWrite(rPins[rowPin], HIGH);
-
 		for(int colPin = 0; colPin < cPinsNo; colPin++)
 		{
 			if(HIGH == digitalRead(cPins[colPin]))
 			{
 				//Serial.println(buttonMap[rowPin][colPin]);
-
 				digitalWrite(ledPin, HIGH);
 				// pull the current co-ordinate of the button pin 
 				// that is registering: 0,0 - 0,1 - 0,2 etc
 				currentX = buttonMap[rowPin][colPin][0];
 				currentY = buttonMap[rowPin][colPin][1];
+				int getPatternCode = currentBoard[currentX][currentY];
+				Serial.println(getPatternCode);
 
-				matrix.drawPixel(currentX,currentY,matrix.Color(0, 0, 255)); // one red pixel
-
-				// trying to thin kabout how to compare the current board w/ the button map...
-				// grab the index numnber
-				// get the same index from buttoMap
-				// if the values at that index are == to the values of currentX and currentY
-				// shock the player
-				// ??
-
-
-				
+				// if the button is new and has not been tripped
+				if(getPatternCode != 9){
+					if(getPatternCode == 1){
+						digitalWrite(p1Shock, HIGH);
+						delay(500);
+						digitalWrite(p1Shock, LOW);
+					}
+					matrix.drawPixel(currentX,currentY,matrix.Color(0, 0, 255)); // one blue pixel
+					currentBoard[currentX][currentY] = 9;
+				}
 				delay(200); 
 			}
 			else 
@@ -145,13 +147,6 @@ void loop()
 	// show the matrix
 	matrix.show();
 }
-
-// print that shit
-				/*Serial.print("square: ");
-				Serial.print(currentX);
-				Serial.print(",");
-				Serial.print(currentY);
-				Serial.println();*/
 
 void resetEverything()
 {
@@ -179,21 +174,15 @@ void chooseBoard(int command){
 
 void boardPattern(int pattern[2][2])
 {
-
 	// ohmygod I hate you C++ 
 	// this is me assigning one array to another. 
-	// Is there a better way to do this? 
-
-	for(int i = 0; i < 2; i++){
-		for(int j = 0; j < 2; j++){
-			//Serial.print(pattern[i][j]);
+	for(int i = 0; i < 2; i++)
+	{
+		for(int j = 0; j < 2; j++)
+		{
 			currentBoard[i][j] = pattern[i][j];
-			//Serial.print(currentBoard[i][j]);
 		}
 	}
-	// 1 = shock / the sea
-	// 0 = land
-
 	for(int row = 0; row < rPinsNo; row++) 
 	{
     for(int column = 0; column < cPinsNo; column++) 
